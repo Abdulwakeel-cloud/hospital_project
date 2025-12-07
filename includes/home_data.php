@@ -25,7 +25,7 @@ $statement->execute();
 $posts = $statement->fetchAll(PDO::FETCH_OBJ);
 
 // Departments / categories
-$categoriesSql = "SELECT * FROM categories ORDER BY id DESC LIMIT 4";
+$categoriesSql = "SELECT * FROM categories ORDER BY id DESC ";
 $category_stmt = $db->prepare($categoriesSql);
 $category_stmt->execute();
 $categories = $category_stmt->fetchAll(PDO::FETCH_OBJ);

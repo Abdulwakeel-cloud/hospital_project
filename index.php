@@ -21,21 +21,10 @@ require_once "includes/home_data.php";
     <!-- Stylesheets -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-    <!-- Initial theme (light/dark) applied before CSS to avoid flash -->
-    <script>
-      (function() {
-        try {
-          var saved = localStorage.getItem('theme');
-          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          var theme = saved || (prefersDark ? 'dark' : 'light');
-          document.documentElement.setAttribute('data-theme', theme);
-        } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'light');
-        }
-      })();
-    </script>
+    <!-- Initial theme applied early to avoid flash -->
+    <script src="theme-init.js" onerror="document.documentElement.classList.add('script-error')"></script>
 
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css" onerror="document.documentElement.classList.add('style-error')" />
   
     <link rel="stylesheet" href="fonts/css/all.css">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" as="style" />
@@ -72,21 +61,9 @@ require_once "includes/home_data.php";
         </nav>
         <div class="header-cta">
           <a href="#appointment" class="btn btn-accent" id="appointmentBtn">Make An Appointment</a>
-          <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
             <i class="fa-solid fa-moon"></i>
           </button>
-          <script>
-            // Update icon immediately based on current theme
-            (function() {
-              try {
-                var theme = document.documentElement.getAttribute('data-theme') || 'light';
-                var icon = document.getElementById('themeToggle')?.querySelector('i');
-                if (icon) {
-                  icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-                }
-              } catch(e) {}
-            })();
-          </script>
           <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
             <span></span><span></span><span></span>
           </button>
@@ -159,7 +136,7 @@ require_once "includes/home_data.php";
               <p class="fade-in">No departments available at the moment.</p>
             <?php endif; ?>
           </div>
-          <div class="text-center fade-in" style="margin-top: 40px;">
+          <div class="text-center fade-in mt-40">
             <a href="departments.php" class="btn btn-primary">See All Departments <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
@@ -212,7 +189,7 @@ require_once "includes/home_data.php";
             </div>
             <button class="carousel-btn next" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
-          <div class="text-center fade-in" style="margin-top: 40px;">
+          <div class="text-center fade-in mt-40">
             <a href="services.php" class="btn btn-primary">See All Services <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
@@ -275,7 +252,7 @@ require_once "includes/home_data.php";
             <div class="carousel-dots" aria-label="Testimonials pagination"></div>
             <button class="carousel-btn next" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
-          <div class="text-center fade-in" style="margin-top: 40px;">
+          <div class="text-center fade-in mt-40">
             <a href="#testimonials" class="btn btn-primary">Read More Testimonials <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
@@ -385,7 +362,7 @@ require_once "includes/home_data.php";
               <p>No post found.</p>
             <?php endif; ?>
           </div>
-          <div class="text-center fade-in" style="margin-top: 40px;">
+          <div class="text-center fade-in mt-40">
             <a href="blog.php" class="btn btn-primary">See All Articles <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
@@ -442,13 +419,14 @@ require_once "includes/home_data.php";
           $old = $_SESSION['appointment_old'] ?? [];
           unset($_SESSION['appointment_old']);
           ?>
-          <form class="form" id="appointmentForm" novalidate action="includes/appointment.php" method="POST">
+          <form class="form" id="appointmentForm"  action="includes/appointment.php" method="POST">
             <div class="form-row">
               <div class="form-field">
                 <label for="department">Department</label>
                 <select id="department" name="department_id" required>
                   <option value="">Select Department</option>
                   <?php if(!empty($categories)) : ?>
+                 
                     <?php foreach($categories as $category) : ?>
                       <option value="<?php echo htmlspecialchars($category->id); ?>" <?php echo (!empty($old['department_id']) && (int)$old['department_id'] === (int)$category->id) ? 'selected' : ''; ?>>
                         <?php echo htmlspecialchars($category->category_name); ?>
@@ -535,6 +513,7 @@ require_once "includes/home_data.php";
       </div>
     </footer>
 
-    <script src="script.js" defer></script>
+    <div id="assetNotice" class="asset-notice" role="status" aria-live="polite">Some assets failed to load. Please refresh or check your connection.</div>
+    <script src="script.js" defer onerror="document.documentElement.classList.add('script-error')"></script>
   </body>
   </html>

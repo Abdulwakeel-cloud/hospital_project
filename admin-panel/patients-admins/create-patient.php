@@ -36,25 +36,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($departmentId === '') {
         $errors[] = 'Department is required.';
-    }
+    } elseif (!is_numeric($departmentId)) {
+    $errors[] = 'Invalid department selected.';
+}
 
     if ($doctorId === '') {
         $errors[] = 'Doctor is required.';
-    }
+    } elseif (!is_numeric($doctorId)) {
+    $errors[] = 'Invalid doctor selected.';
+}
 
     if ($name === '') {
         $errors[] = 'Name is required.';
-    }
+    }elseif (strlen($name) < 2) {
+    $errors[] = 'Name must be at least 2 characters long.';
+} elseif (strlen($name) > 100) {
+    $errors[] = 'Name is too long. Maximum 100 characters allowed.';
+} elseif (!preg_match('/^[a-zA-Z\s\-\'\.]+$/', $name)) {
+    $errors[] = 'Name contains invalid characters.';
+}
 
     if ($phone === '') {
         $errors[] = 'Phone is required.';
+    }else {
+    // Remove common phone formatting characters
+    $phoneDigits = preg_replace('/[\s\-\(\)\+]/', '', $phone);
+    // Check if phone contains only digits and has reasonable length
+    if (!preg_match('/^\d+$/', $phoneDigits)) {
+        $errors[] = 'Phone number contains invalid characters.';
+    } elseif (strlen($phoneDigits) < 10 || strlen($phoneDigits) > 15) {
+        $errors[] = 'Phone number must be between 10 and 15 digits.';
     }
+}
 
     if ($appointmentDate === '') {
         $errors[] = 'Appointment date is required.';
     } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $appointmentDate)) {
-        $errors[] = 'Invalid date format.';
+        $errors[] = 'Invalid date format. Please use YYYY-MM-DD format. ';
+    } else {
+    // Validate date is not in the past
+    $today = date('Y-m-d');
+    if ($appointmentDate < $today) {
+        $errors[] = 'Appointment date cannot be in the past.';
+    } 
+   $maxDate = date('Y-m-d', strtotime('+1 year'));
+    if ($appointmentDate > $maxDate) {
+        $errors[] = 'Appointment date cannot be more than 1 year in the future.';
     }
+    
+    // Optional: Prevent booking on weekends (Saturday = 6, Sunday = 0)
+    $dayOfWeek = date('w', strtotime($appointmentDate));
+    if ($dayOfWeek == 0 || $dayOfWeek == 6) {
+        $errors[] = 'Appointments are only available on weekdays (Monday-Friday).';
+    }
+  }
 
     if (empty($errors)) {
         try {

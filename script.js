@@ -247,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Pricing toggle
   const updatePrices = () => {
+    if (!priceToggle) return;
     const yearly = priceToggle.checked;
     document.querySelectorAll('.plan').forEach((plan) => {
       const valueEl = plan.querySelector('.plan-price .value');
@@ -257,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
   priceToggle?.addEventListener('change', updatePrices);
-  updatePrices();
+  if (priceToggle) updatePrices();
 
   // Enhanced Form Validation with Animations
   const validateField = (field) => {
@@ -374,11 +375,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const applyTheme = (t) => {
     htmlEl.setAttribute('data-theme', t);
     const icon = themeToggle?.querySelector('i');
-    if (!icon) return;
-    // Update icon: sun for dark mode, moon for light mode
-    icon.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-    // Update aria-label for accessibility
-    themeToggle?.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    if (icon) {
+      icon.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+    if (themeToggle) {
+      themeToggle.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+      themeToggle.setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false');
+    }
   };
   
   // Get saved theme or use system preference
@@ -398,7 +401,11 @@ document.addEventListener('DOMContentLoaded', () => {
   themeToggle?.addEventListener('click', () => {
     const currentTheme = htmlEl.getAttribute('data-theme') || 'light';
     const next = currentTheme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('theme', next);
+    try {
+      localStorage.setItem('theme', next);
+    } catch (e) {
+      // If storage is unavailable or full, continue without persistence
+    }
     applyTheme(next);
   });
 
@@ -432,5 +439,47 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     setActive();
     window.addEventListener('scroll', setActive, { passive: true });
+  }
+
+  // Contact form validation and loading state
+  const contactForm = document.getElementById('contactForm');
+  if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+      const form = contactForm;
+      const inputs = form.querySelectorAll('input[required], textarea[required], select[required]');
+      let ok = true;
+      inputs.forEach((input) => {
+        input.classList.remove('error');
+        if (!input.value.trim()) {
+          input.classList.add('error');
+          ok = false;
+        }
+        if (ok && input.type === 'email') {
+          const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!re.test(input.value.trim())) {
+            input.classList.add('error');
+            ok = false;
+          }
+        }
+        if (ok && input.type === 'tel') {
+          const num = input.value.replace(/[^\d]/g, '');
+          if (num.length < 10) {
+            input.classList.add('error');
+            ok = false;
+          }
+        }
+      });
+      if (!ok) {
+        e.preventDefault();
+        alert('Please fix the highlighted fields.');
+        return;
+      }
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) {
+        btn.disabled = true;
+        btn.dataset.original = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+      }
+    });
   }
 });

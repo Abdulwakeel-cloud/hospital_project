@@ -1,42 +1,87 @@
 <?php
 require_once "../../includes/session_config.php";
 require_once "../../includes/dbh.php";
+
 $errors = [];
+$max_file_size = 5 * 1024 * 1024; // 5MB in bytes
+
 if (isset($_POST["submit"])) {
     $catName = trim($_POST["name"]);
-    // Image file handling
-    $img_name = $_FILES['img']['name'];
-    $img_tmp_name = $_FILES['img']['tmp_name'];
-    // Generate a unique filename for security and to prevent overwrites
-    $img_extension = pathinfo($img_name, PATHINFO_EXTENSION);
-    $new_img_name = uniqid("service", true) . "." . $img_extension;
-    // Define the upload directory
-    $dir = "../uploads/services/" . $new_img_name;
-    // Validate category name
-    if (empty($catName) || empty($img_name)) {
-        $errors[] = "Category and image are required.";
-    } elseif (!in_array(strtolower($img_extension), ['jpg', 'jpeg', 'png'])) {
-        $errors[] = "Invalid image format. Only JPG, JPEG, and PNG are allowed.";
-    } else {
+
+    // --- File Data Extraction ---
+    $img_name = $_FILES['img']['name'] ?? '';
+    $img_tmp_name = $_FILES['img']['tmp_name'] ?? '';
+    $img_size = $_FILES['img']['size'] ?? 0;
+    $img_error = $_FILES['img']['error'] ?? UPLOAD_ERR_NO_FILE;
+
+    // --- Validation and Error Checking ---
+
+    // 1. Check for required fields and upload errors
+    if (empty($catName) || $img_error === UPLOAD_ERR_NO_FILE) {
+        $errors[] = "Category name and image file are required.";
+    } elseif ($img_error !== UPLOAD_ERR_OK) {
+        $errors[] = "File upload failed with error code: " . $img_error;
+    } 
+    
+    if (empty($errors)) {
+        // 2. File Size Validation
+        if ($img_size > $max_file_size) {
+            $errors[] = "Image size is too large. Maximum allowed size is " . ($max_file_size / 1024 / 1024) . "MB.";
+        }
+
+        // 3. File Extension and Type Validation
+        $img_extension = pathinfo($img_name, PATHINFO_EXTENSION);
+        $allowed_extensions = ['jpg', 'jpeg', 'png'];
+
+        if (!in_array(strtolower($img_extension), $allowed_extensions)) {
+            $errors[] = "Invalid file type. Only JPG, JPEG, and PNG are allowed extensions.";
+        } else {
+            // Using exif_imagetype is highly recommended for MIME check on the actual file content
+            $image_type = exif_imagetype($img_tmp_name);
+            $allowed_types = [IMAGETYPE_JPEG, IMAGETYPE_PNG];
+            
+            if (!in_array($image_type, $allowed_types)) {
+                $errors[] = "File content is not a valid image type (JPEG or PNG).";
+            }
+        }
+    }
+
+    // --- Database Insertion and File Handling ---
+    if (empty($errors)) {
+        // Generate a unique filename for security
+        $new_img_name = uniqid("service", true) . "." . $img_extension;
+        $dir = "../uploads/services/" . $new_img_name;
+
         try {
-            // Using the unique filename for the database insertion
+            // Start Transaction to ensure data integrity
+            $db->beginTransaction();
+
+            // 1. Insert record into database
             $stmt = $db->prepare("INSERT INTO categories (category_name, img) VALUES (:category, :image)");
             $stmt->bindParam(':category', $catName);
             $stmt->bindParam(':image', $new_img_name);
             $stmt->execute();
-            // Move uploaded file only if DB insertion succeeds
+
+            // 2. Move uploaded file
             if (move_uploaded_file($img_tmp_name, $dir)) {
+                $db->commit(); // Commit transaction only if file move succeeds
                 $success = "Category added successfully! Redirecting...";
+                
                 // Redirect user after success
-                echo "<script> setTimeout(function() { window.location.href = 'show-categories.php'; // Redirect to the category list page }, 2000); </script>";
+                echo "<script> setTimeout(function() { window.location.href = 'show-categories.php'; }, 2000); </script>";
             } else {
-                $errors[] = "Database entry successful, but file upload failed.";
+                $db->rollBack(); // Rollback DB insert if file move fails
+                $errors[] = "File upload failed after database entry. The record was rolled back.";
             }
         } catch (PDOException $e) {
+            // Catch any DB errors and roll back
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             $errors[] = "Database Error: " . $e->getMessage();
         }
     }
-} // Added this closing bracket
+}
 ?>
 
 <!DOCTYPE html>

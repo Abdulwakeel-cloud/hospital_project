@@ -16,21 +16,10 @@ $categories = $category_stmt->fetchAll(PDO::FETCH_OBJ);
     <meta name="description" content="Explore all our medical departments and specialized care services." />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-    <!-- Initial theme (light/dark) applied before CSS to avoid flash -->
-    <script>
-      (function() {
-        try {
-          var saved = localStorage.getItem('theme');
-          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          var theme = saved || (prefersDark ? 'dark' : 'light');
-          document.documentElement.setAttribute('data-theme', theme);
-        } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'light');
-        }
-      })();
-    </script>
+    <!-- Initial theme applied early to avoid flash -->
+    <script src="theme-init.js" onerror="document.documentElement.classList.add('script-error')"></script>
 
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css" onerror="document.documentElement.classList.add('style-error')" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   </head>
   <body>
@@ -49,21 +38,9 @@ $categories = $category_stmt->fetchAll(PDO::FETCH_OBJ);
         </nav>
         <div class="header-cta">
           <a href="index.php#appointment" class="btn btn-accent">Make An Appointment</a>
-          <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
             <i class="fa-solid fa-moon"></i>
           </button>
-          <script>
-            // Update icon immediately based on current theme
-            (function() {
-              try {
-                var theme = document.documentElement.getAttribute('data-theme') || 'light';
-                var icon = document.getElementById('themeToggle')?.querySelector('i');
-                if (icon) {
-                  icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-                }
-              } catch(e) {}
-            })();
-          </script>
           <button class="hamburger" id="hamburger" aria-label="Open menu">
             <span></span><span></span><span></span>
           </button>
@@ -72,16 +49,16 @@ $categories = $category_stmt->fetchAll(PDO::FETCH_OBJ);
     </header>
 
     <main>
-      <section class="hero" style="padding: 120px 0 60px;">
+      <section class="hero page-hero">
         <div class="container">
           <header class="section-head fade-in">
-            <h1 style="font-size: clamp(2rem, 4vw, 3.5rem); margin-bottom: 1rem;">Our Departments</h1>
-            <p style="font-size: 1.2rem;">Comprehensive care across specialized medical fields</p>
+            <h1 class="hero-title">Our Departments</h1>
+            <p class="hero-subtitle">Comprehensive care across specialized medical fields</p>
           </header>
         </div>
       </section>
 
-      <section class="departments" id="departments" style="padding: 60px 0;">
+      <section class="departments" id="departments">
         <div class="container">
           <div class="dept-grid">
             <?php if(!empty($categories)) : ?>
@@ -106,9 +83,9 @@ $categories = $category_stmt->fetchAll(PDO::FETCH_OBJ);
               endforeach; 
               ?>
             <?php else: ?>
-              <div class="fade-in" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                <p style="font-size: 1.2rem; color: var(--color-muted);">No departments available at the moment.</p>
-                <a href="index.php" class="btn btn-primary" style="margin-top: 20px;">Back to Home</a>
+              <div class="fade-in dept-empty">
+                <p>No departments available at the moment.</p>
+                <a href="index.php" class="btn btn-primary">Back to Home</a>
               </div>
             <?php endif; ?>
           </div>
@@ -154,7 +131,8 @@ $categories = $category_stmt->fetchAll(PDO::FETCH_OBJ);
       </div>
     </footer>
 
-    <script src="script.js" defer></script>
+    <div id="assetNotice" class="asset-notice" role="status" aria-live="polite">Some assets failed to load. Please refresh or check your connection.</div>
+    <script src="script.js" defer onerror="document.documentElement.classList.add('script-error')"></script>
   </body>
 </html>
 
